@@ -2,7 +2,7 @@ import VerticalLayout from '../../components/VerticalLayout.js'
 import ErrorPage from "../../components/ErrorPage.js"
 import LoadingPage from "../../components/LoadingPage.js"
 import BigBilledIcon from '../../assets/svg/big_billed.js'
-import { filteredBills } from './index.js'
+import { filteredBills } from './Dashboard.js'
 import ArrowIcon from '../../assets/svg/arrow.js'
 
 export default ({ data, loading, error }) => {

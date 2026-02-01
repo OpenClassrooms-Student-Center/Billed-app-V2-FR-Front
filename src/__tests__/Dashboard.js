@@ -6,7 +6,17 @@ import { fireEvent, screen, waitFor } from "@testing-library/dom"
 import userEvent from '@testing-library/user-event'
 import DashboardFormUI from "../pages/Dashboard/DashboardFormUI.js"
 import DashboardUI from "../pages/Dashboard/DashboardUI.js"
-import Dashboard, { filteredBills, cards } from "../pages/Dashboard/index.js"
+import {
+  filteredBills,
+  cards,
+  initDashboardPage,
+  handleShowTickets,
+  handleEditTicket,
+  handleAcceptSubmit,
+  handleRefuseSubmit,
+  handleClickIconEye,
+  resetDashboardState
+} from "../pages/Dashboard/Dashboard.js"
 import { ROUTES, ROUTES_PATH } from "../constants/routes"
 import { localStorageMock } from "../__mocks__/localStorage.js"
 import mockStore from "../__mocks__/store"
@@ -15,16 +25,10 @@ import router from "../app/Router"
 
 jest.mock("../app/store", () => mockStore)
 
-// --- Helper Functions ---
+//Helper Functions
 
 const onNavigate = (pathname) => {
   document.body.innerHTML = ROUTES({ pathname })
-}
-
-const createDashboard = (bills, store = null) => {
-  return new Dashboard({
-    document, onNavigate, store, bills, localStorage: window.localStorage
-  })
 }
 
 const setupLocalStorage = () => {
@@ -34,7 +38,6 @@ const setupLocalStorage = () => {
   }))
 }
 
-// ------------------------
 
 describe('Given I am connected as an Admin', () => {
   describe('When I am on Dashboard page, there are bills, and there is one pending', () => {
@@ -71,13 +74,13 @@ describe('Given I am connected as an Admin', () => {
   describe('When I am on Dashboard page and I click on arrow', () => {
     test('Then, tickets list should be unfolding, and cards should appear', async () => {
       setupLocalStorage()
+      resetDashboardState()
 
-      const dashboard = createDashboard(bills)
       document.body.innerHTML = DashboardUI({ data: { bills } })
 
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
-      const handleShowTickets2 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 2))
-      const handleShowTickets3 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 3))
+      const handleShowTickets1 = jest.fn((e) => handleShowTickets(e, bills, 1, document))
+      const handleShowTickets2 = jest.fn((e) => handleShowTickets(e, bills, 2, document))
+      const handleShowTickets3 = jest.fn((e) => handleShowTickets(e, bills, 3, document))
 
       const icon1 = screen.getByTestId('arrow-icon1')
       const icon2 = screen.getByTestId('arrow-icon2')
@@ -106,11 +109,11 @@ describe('Given I am connected as an Admin', () => {
   describe('When I am on Dashboard page and I click on edit icon of a card', () => {
     test('Then, right form should be filled', () => {
       setupLocalStorage()
+      resetDashboardState()
 
-      const dashboard = createDashboard(bills)
       document.body.innerHTML = DashboardUI({ data: { bills } })
 
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
+      const handleShowTickets1 = jest.fn((e) => handleShowTickets(e, bills, 1, document))
       const icon1 = screen.getByTestId('arrow-icon1')
       icon1.addEventListener('click', handleShowTickets1)
       userEvent.click(icon1)
@@ -125,11 +128,11 @@ describe('Given I am connected as an Admin', () => {
   describe('When I am on Dashboard page and I click 2 times on edit icon of a card', () => {
     test('Then, big bill Icon should Appear', () => {
       setupLocalStorage()
+      resetDashboardState()
 
-      const dashboard = createDashboard(bills)
       document.body.innerHTML = DashboardUI({ data: { bills } })
 
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
+      const handleShowTickets1 = jest.fn((e) => handleShowTickets(e, bills, 1, document))
       const icon1 = screen.getByTestId('arrow-icon1')
       icon1.addEventListener('click', handleShowTickets1)
       userEvent.click(icon1)
@@ -157,15 +160,14 @@ describe('Given I am connected as Admin, and I am on Dashboard page, and I click
   describe('When I click on accept button', () => {
     test('I should be sent on Dashboard with big billed icon instead of form', () => {
       setupLocalStorage()
+      resetDashboardState()
       document.body.innerHTML = DashboardFormUI(bills[0])
 
-      const dashboard = createDashboard(bills)
-
       const acceptButton = screen.getByTestId("btn-accept-bill-d")
-      const handleAcceptSubmit = jest.fn((e) => dashboard.handleAcceptSubmit(e, bills[0]))
-      acceptButton.addEventListener("click", handleAcceptSubmit)
+      const handleAcceptSubmitWrapped = jest.fn((e) => handleAcceptSubmit(e, bills[0], document))
+      acceptButton.addEventListener("click", handleAcceptSubmitWrapped)
       fireEvent.click(acceptButton)
-      expect(handleAcceptSubmit).toHaveBeenCalled()
+      expect(handleAcceptSubmitWrapped).toHaveBeenCalled()
       const bigBilledIcon = screen.queryByTestId("big-billed-icon")
       expect(bigBilledIcon).toBeTruthy()
     })
@@ -173,15 +175,14 @@ describe('Given I am connected as Admin, and I am on Dashboard page, and I click
   describe('When I click on refuse button', () => {
     test('I should be sent on Dashboard with big billed icon instead of form', () => {
       setupLocalStorage()
+      resetDashboardState()
       document.body.innerHTML = DashboardFormUI(bills[0])
 
-      const dashboard = createDashboard(bills)
-
       const refuseButton = screen.getByTestId("btn-refuse-bill-d")
-      const handleRefuseSubmit = jest.fn((e) => dashboard.handleRefuseSubmit(e, bills[0]))
-      refuseButton.addEventListener("click", handleRefuseSubmit)
+      const handleRefuseSubmitWrapped = jest.fn((e) => handleRefuseSubmit(e, bills[0], document))
+      refuseButton.addEventListener("click", handleRefuseSubmitWrapped)
       fireEvent.click(refuseButton)
-      expect(handleRefuseSubmit).toHaveBeenCalled()
+      expect(handleRefuseSubmitWrapped).toHaveBeenCalled()
       const bigBilledIcon = screen.queryByTestId("big-billed-icon")
       expect(bigBilledIcon).toBeTruthy()
     })
@@ -192,15 +193,14 @@ describe('Given I am connected as Admin and I am on Dashboard page and I clicked
   describe('When I click on the icon eye', () => {
     test('A modal should open', () => {
       setupLocalStorage()
+      resetDashboardState()
       document.body.innerHTML = DashboardFormUI(bills[0])
 
-      const dashboard = createDashboard(bills)
-
-      const handleClickIconEye = jest.fn(dashboard.handleClickIconEye)
+      const handleClickIconEyeWrapped = jest.fn(() => handleClickIconEye(document))
       const eye = screen.getByTestId('icon-eye-d')
-      eye.addEventListener('click', handleClickIconEye)
+      eye.addEventListener('click', handleClickIconEyeWrapped)
       userEvent.click(eye)
-      expect(handleClickIconEye).toHaveBeenCalled()
+      expect(handleClickIconEyeWrapped).toHaveBeenCalled()
 
       const modale = screen.getByTestId('modaleFileAdmin')
       expect(modale).toBeTruthy()

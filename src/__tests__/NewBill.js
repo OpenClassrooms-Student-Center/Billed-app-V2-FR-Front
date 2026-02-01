@@ -4,7 +4,7 @@
 
 import { screen } from "@testing-library/dom"
 import NewBillUI from "../pages/NewBill/NewBillUI.js"
-import NewBill from "../pages/NewBill/index.js"
+import { initNewBillPage } from "../pages/NewBill/NewBill.js"
 
 
 describe("Given I am connected as an employee", () => {

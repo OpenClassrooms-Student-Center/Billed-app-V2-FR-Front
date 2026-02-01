@@ -3,7 +3,7 @@
  */
 
 import LoginUI from "../pages/Login/LoginUI";
-import Login from "../pages/Login/index.js";
+import { initLoginPage } from "../pages/Login/Login.js";
 import { ROUTES } from "../constants/routes";
 import { fireEvent, screen, waitFor } from "@testing-library/dom";
 import { localStorageMock } from "../__mocks__/localStorage.js"
@@ -82,20 +82,23 @@ describe("Given that I am a user on login page", () => {
 
       const form = screen.getByTestId("form-employee");
 
-      const store = jest.fn();
-      const login = new Login({
+      // Mock store with login method
+      const store = {
+        login: jest.fn().mockResolvedValue({ jwt: 'fake-jwt' }),
+        users: () => ({
+          create: jest.fn().mockResolvedValue({})
+        })
+      };
+
+      // Initialize the login page with functional approach
+      initLoginPage({
         document,
         localStorage: window.localStorage,
         onNavigate,
-        PREVIOUS_LOCATION: "",
-        store,
+        store
       });
 
-      const handleSubmit = jest.fn(login.handleSubmitEmployee);
-      login.login = jest.fn().mockResolvedValue({});
-      form.addEventListener("submit", handleSubmit);
       fireEvent.submit(form);
-      expect(handleSubmit).toHaveBeenCalled();
 
       // Wait for navigation and verify the result
       await waitFor(() => expect(screen.getByText("Mes notes de frais")).toBeTruthy())
@@ -166,20 +169,23 @@ describe("Given that I am a user on login page", () => {
 
       const form = screen.getByTestId("form-admin");
 
-      const store = jest.fn();
-      const login = new Login({
+      // Mock store with login method
+      const store = {
+        login: jest.fn().mockResolvedValue({ jwt: 'fake-jwt' }),
+        users: () => ({
+          create: jest.fn().mockResolvedValue({})
+        })
+      };
+
+      // Initialize the login page with functional approach
+      initLoginPage({
         document,
         localStorage: window.localStorage,
         onNavigate,
-        PREVIOUS_LOCATION: "",
-        store,
+        store
       });
 
-      const handleSubmit = jest.fn(login.handleSubmitAdmin);
-      login.login = jest.fn().mockResolvedValue({});
-      form.addEventListener("submit", handleSubmit);
       fireEvent.submit(form);
-      expect(handleSubmit).toHaveBeenCalled();
 
       // Integration Check: Wait for redirection
       await waitFor(() => expect(screen.getByText("Validations")).toBeTruthy())
